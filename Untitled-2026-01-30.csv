@@ -1,0 +1,2 @@
+avg(readmit_30d),sum(utilization_score)
+0.11159915885462728,122400

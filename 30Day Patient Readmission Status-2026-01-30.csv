@@ -1,0 +1,3 @@
+readmit_status,count(*)
+Not Readmitted,90409
+Readmitted,11357
