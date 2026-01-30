@@ -24,14 +24,17 @@ filtered_df = df[df["readmit_status"] == risk]
 st.metric("Total Patients", len(filtered_df))
 
 # Chart
-fig = px.histogram(
+fig = px.bar(
     filtered_df,
-    x="readmit_probability",
-    nbins=20,
-    title="Readmission Probability Distribution"
+    x="readmit_status",
+    y="count(*)",
+    title="Readmission Status Count"
 )
+
+st.plotly_chart(fig, use_container_width=True)
 st.plotly_chart(fig, use_container_width=True)
 
 st.success("Live AI Risk Dashboard Running Successfully 🚀")
+
 
 
