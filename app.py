@@ -12,117 +12,94 @@ st.set_page_config(
 st.title("🏥 AI-Powered Patient Readmission Dashboard")
 st.caption("Predicting 30-day hospital readmission risk using AI")
 
+# ---------------- DATA FOLDER ----------------
 DATA_DIR = Path(".")
 
-# ---------------- DASHBOARD MAP ----------------
-DASHBOARDS = {
-    "AI Risk Distribution":
-        "AIBased Patient Risk Distribution-2026-01-30.csv",
+csv_files = sorted([f.name for f in DATA_DIR.glob("*.csv")])
 
-    "Risk by Age Group":
-        "Readmission Risk by Age Group-2026-01-30.csv",
-
-    "Hospital Utilization by Risk":
-        "Hospital Utilization by AI Risk Level-2026-01-30.csv",
-
-    "Diabetes Impact on Readmission":
-        "Impact of Diabetes on Readmission Risk-2026-01-30.csv",
-
-    "Actual vs AI Risk":
-        "AI Risk vs Actual Readmission-2026-01-30.csv",
-
-    "Overall Readmission Risk Level":
-        "Overall Readmission Risk Level-2026-01-30.csv",
-
-    "30-Day Readmission Status":
-        "30Day Patient Readmission Status-2026-01-30.csv"
-}
+if not csv_files:
+    st.error("❌ No CSV files found in project directory")
+    st.stop()
 
 # ---------------- SIDEBAR ----------------
-selected_dashboard = st.sidebar.selectbox(
-    "📊 Select Dashboard",
-    list(DASHBOARDS.keys())
+selected_file = st.sidebar.selectbox(
+    "📁 Select Dataset",
+    csv_files
 )
 
-file_path = DATA_DIR / DASHBOARDS[selected_dashboard]
+file_path = DATA_DIR / selected_file
 
 # ---------------- LOAD CSV ----------------
-df = pd.read_csv(file_path)
-st.success("CSV loaded successfully")
+try:
+    df = pd.read_csv(file_path)
+    st.success(f"Loaded: {selected_file}")
+except Exception as e:
+    st.error("CSV load failed")
+    st.stop()
 
 with st.expander("🔍 Show Columns"):
     st.write(df.columns.tolist())
     st.dataframe(df.head())
 
 st.divider()
-st.subheader(selected_dashboard)
-
-# ---------------- TABLE VIEW ----------------
-st.dataframe(df, use_container_width=True)
 
 # ---------------- COLOR PALETTE ----------------
-COLOR_SEQ = px.colors.qualitative.Set2
+COLORS = px.colors.qualitative.Set2
 
-# ---------------- CHART LOGIC ----------------
-
-# ✅ ACTUAL vs AI (SPECIAL)
-if selected_dashboard == "Actual vs AI Risk":
-
-    risk_col = df.columns[0]
+# ---------------- ACTUAL vs AI RISK ----------------
+if "actual" in selected_file.lower() and "ai" in selected_file.lower():
 
     actual_col = None
     ai_col = None
+    x_col = df.columns[0]
 
-    for c in df.columns:
-        cl = c.lower()
-        if "actual" in cl:
-            actual_col = c
-        if "ai" in cl or "pred" in cl:
-            ai_col = c
+    for col in df.columns:
+        c = col.lower()
+        if "actual" in c:
+            actual_col = col
+        if "ai" in c or "pred" in c:
+            ai_col = col
 
     if actual_col and ai_col:
         fig = px.bar(
             df,
-            x=risk_col,
+            x=x_col,
             y=[actual_col, ai_col],
             barmode="group",
-            color_discrete_sequence=COLOR_SEQ,
-            title="Actual vs AI Predicted Readmission"
+            color_discrete_sequence=COLORS,
+            title="Actual vs AI Predicted Readmission Risk"
         )
 
         fig.update_layout(
             xaxis_title="Risk Category",
             yaxis_title="Patient Count",
-            legend_title="Metric",
             plot_bgcolor="rgba(0,0,0,0)",
-            bargap=0.25
+            legend_title="Metric"
         )
 
         st.plotly_chart(fig, use_container_width=True)
 
     else:
-        st.error("Expected Actual & AI columns not found")
+        st.error("❌ Could not detect Actual / AI columns automatically")
 
-# ---------------- ALL OTHER DASHBOARDS ----------------
+# ---------------- GENERIC DASHBOARD ----------------
 else:
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
 
     if numeric_cols:
-        x_col = df.columns[0]
-        y_col = numeric_cols[-1]
+        x = df.columns[0]
+        y = numeric_cols[-1]
 
         fig = px.bar(
             df,
-            x=x_col,
-            y=y_col,
-            color=x_col,
-            color_discrete_sequence=COLOR_SEQ,
-            title=f"{selected_dashboard}"
+            x=x,
+            y=y,
+            color=x,
+            color_discrete_sequence=COLORS,
+            title=selected_file.replace(".csv", "")
         )
 
         fig.update_layout(
-            xaxis_title=x_col.replace("_", " ").title(),
-            yaxis_title=y_col.replace("_", " ").title(),
             plot_bgcolor="rgba(0,0,0,0)",
             showlegend=False
         )
@@ -133,8 +110,7 @@ else:
         )
 
         st.plotly_chart(fig, use_container_width=True)
-
     else:
-        st.warning("No numeric column available for chart")
+        st.warning("No numeric columns available")
 
-st.success("Dashboard rendered successfully")
+st.success("✅ Dashboard rendered successfully")
