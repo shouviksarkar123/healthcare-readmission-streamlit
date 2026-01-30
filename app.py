@@ -8,7 +8,7 @@ st.title("🏥 AI-Powered Patient Readmission Dashboard")
 st.markdown("Predicting 30-day hospital readmission risk using AI")
 
 # Load data
-df = pd.read_csv("data/readmission_predictions.csv")
+df = pd.read_csv("30Day Patient Readmission Status-2026-01-30.csv")
 
 # Sidebar filter
 st.sidebar.header("Filter")
@@ -32,3 +32,4 @@ fig = px.histogram(
 st.plotly_chart(fig, use_container_width=True)
 
 st.success("Live AI Risk Dashboard Running Successfully 🚀")
+
