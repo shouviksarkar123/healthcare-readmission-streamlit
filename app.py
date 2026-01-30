@@ -12,89 +12,87 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ================== TOP PROJECT BANNER (FIXED) ==================
-st.markdown(
-    """
-    <style>
-    .top-banner {
-        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-        padding: 18px;
-        border-radius: 14px;
-        color: #ffffff;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-        margin-bottom: 10px;
-    }
-    .top-banner h2 {
-        color: #ffffff;
-        margin-bottom: 6px;
-    }
-    .top-banner p {
-        color: #e5e7eb;
-        margin: 2px 0;
-        font-size: 15px;
-    }
-    </style>
+# ================== GLOBAL THEME & ANIMATION ==================
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(180deg, #0b132b, #1c2541);
+    color: #f9fafb;
+}
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #111827, #1f2933);
+}
+.dashboard-card {
+    background: linear-gradient(135deg, #1f2933, #111827);
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid #374151;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.45);
+    transition: all 0.3s ease;
+    margin-bottom: 18px;
+}
+.dashboard-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 45px rgba(0,0,0,0.65);
+}
+.card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f9fafb;
+}
+.card-desc {
+    color: #d1d5db;
+    font-size: 14px;
+}
+.slide-in {
+    animation: slideIn 0.6s ease-in-out;
+}
+@keyframes slideIn {
+    from {opacity:0; transform: translateX(40px);}
+    to {opacity:1; transform: translateX(0);}
+}
+</style>
+""", unsafe_allow_html=True)
 
-    <div class="top-banner">
-        <h2>🏥 AI-Powered Patient Readmission Dashboard</h2>
-        <p><b>Built by:</b> Shouvik Sarkar (Self Project)</p>
-        <p>
-        <b>Challenge:</b> IDC Resume Project Challenge |
-        <b>Organisers:</b> Indian Data Club & Codebasics |
-        <b>Sponsor:</b> Databricks
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# ================== TOP PROJECT BANNER ==================
+st.markdown(f"""
+<div class="dashboard-card">
+    <h2>🏥 AI-Powered Patient Readmission Dashboard</h2>
+    <p><b>Built by:</b> Shouvik Sarkar (Self Project)</p>
+    <p>
+    <b>Challenge:</b> IDC Resume Project Challenge |
+    <b>Organisers:</b> Indian Data Club & Codebasics |
+    <b>Sponsor:</b> Databricks
+    </p>
+    <p>🕒 Last Updated: {datetime.now().strftime('%d %b %Y, %I:%M %p')}</p>
+</div>
+""", unsafe_allow_html=True)
 
-st.caption("Production-grade analytics for 30-day hospital readmission risk")
+# ================== DATASET LOADER ==================
+st.sidebar.header("📂 Dataset Control")
+csv_files = [f for f in os.listdir() if f.endswith(".csv")]
 
-st.markdown(
-    f"🕒 **Last Updated:** {datetime.now().strftime('%d %b %Y, %I:%M %p')}"
-)
+if not csv_files:
+    st.error("❌ No CSV files found")
+    st.stop()
 
-st.divider()
+selected_file = st.sidebar.selectbox("Select CSV Dataset", csv_files)
 
-# ================== STEP 1 : FILE LOADER ==================
-with st.status("🔄 Step 1: Loading Dataset", expanded=True) as status:
+@st.cache_data
+def load_data(file):
+    return pd.read_csv(file)
 
-    st.sidebar.header("📂 Dataset Control")
-    csv_files = [f for f in os.listdir() if f.endswith(".csv")]
-
-    if not csv_files:
-        st.error("❌ No CSV files found in project directory")
-        st.stop()
-
-    selected_file = st.sidebar.selectbox("Select CSV Dataset", csv_files)
-
-    @st.cache_data
-    def load_data(file):
-        return pd.read_csv(file)
-
+with st.spinner("Loading dataset..."):
     df = load_data(selected_file)
+    time.sleep(0.4)
 
-    progress = st.progress(0)
-    for i in range(100):
-        time.sleep(0.004)
-        progress.progress(i + 1)
+st.success(f"Dataset loaded: {selected_file}")
 
-    status.update(label="✅ Dataset Loaded Successfully", state="complete")
-
-# ================== STEP 2 : COLUMN DISCOVERY ==================
-with st.status("🔍 Step 2: Understanding Dataset", expanded=False):
-
-    numeric_cols = df.select_dtypes(include="number").columns.tolist()
-    cat_cols = df.select_dtypes(exclude="number").columns.tolist()
-
-    with st.expander("📌 View Dataset Columns"):
-        st.write(df.columns.tolist())
-
-    st.info(f"Detected {len(numeric_cols)} numeric and {len(cat_cols)} categorical columns")
+numeric_cols = df.select_dtypes(include="number").columns.tolist()
+cat_cols = df.select_dtypes(exclude="number").columns.tolist()
 
 # ================== GLOBAL FILTER ==================
 st.sidebar.header("🎛 Global Filters")
-
 if cat_cols:
     filter_col = st.sidebar.selectbox("Filter Column", cat_cols)
     filter_vals = st.sidebar.multiselect(
@@ -104,13 +102,7 @@ if cat_cols:
     )
     df = df[df[filter_col].isin(filter_vals)]
 
-# ================== OPTIONAL PATIENT INFO ==================
-with st.expander("🧑‍⚕️ Sample Patient / Disease Info (if available)"):
-    for col in ["patient_id", "patient_nbr", "disease", "diagnosis", "medical_specialty"]:
-        if col in df.columns:
-            st.write(f"**{col}** sample values:", df[col].dropna().unique()[:5])
-
-# ================== DASHBOARD NAVIGATION ==================
+# ================== DASHBOARD MENU ==================
 dashboard = st.sidebar.radio(
     "📊 Dashboard Sections",
     [
@@ -123,61 +115,82 @@ dashboard = st.sidebar.radio(
     ]
 )
 
+# ================== SECTION PREVIEW CARDS ==================
+st.subheader("📌 Analytics Modules")
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.markdown("""
+    <div class="dashboard-card">
+        <div class="card-title">🧑‍💼 Executive Overview</div>
+        <div class="card-desc">Leadership KPIs & summary insights</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c2:
+    st.markdown("""
+    <div class="dashboard-card">
+        <div class="card-title">🤖 AI Risk Distribution</div>
+        <div class="card-desc">AI-predicted readmission risk by segment</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c3:
+    st.markdown("""
+    <div class="dashboard-card">
+        <div class="card-title">🏨 Hospital Utilization</div>
+        <div class="card-desc">Operational & capacity analysis</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.divider()
+
 # ================== EXECUTIVE OVERVIEW ==================
 if dashboard == "🧑‍💼 Executive Overview":
+    st.markdown('<div class="slide-in">', unsafe_allow_html=True)
 
     st.subheader("📌 Executive Summary")
-
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Records", len(df))
     c2.metric("Numeric Metrics", len(numeric_cols))
     c3.metric("Categorical Features", len(cat_cols))
-    c4.metric(
-        "Primary Avg",
-        round(df[numeric_cols[0]].mean(), 2) if numeric_cols else "N/A"
-    )
+    c4.metric("Primary Avg", round(df[numeric_cols[0]].mean(), 2) if numeric_cols else "N/A")
 
-    with st.expander("📈 Metric Distribution"):
-        metric = st.selectbox("Select Metric", numeric_cols)
-        fig = px.histogram(
-            df,
-            x=metric,
-            nbins=40,
-            color_discrete_sequence=["#4CC9F0"]
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    metric = st.selectbox("Select Metric", numeric_cols)
+    fig = px.histogram(df, x=metric, nbins=40,
+                       color_discrete_sequence=["#4CC9F0"])
+    st.plotly_chart(fig, use_container_width=True)
 
-    st.info("💡 Leadership-ready snapshot for strategic decision making")
+    st.info("💡 High-level snapshot for leadership decision-making")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== AI RISK DISTRIBUTION ==================
 elif dashboard == "🤖 AI Risk Distribution":
-
-    st.subheader("🤖 AI Risk Analysis")
+    st.markdown('<div class="slide-in">', unsafe_allow_html=True)
 
     y = st.selectbox("Risk Metric", numeric_cols)
     x = st.selectbox("Segment By", cat_cols)
 
-    tabs = st.tabs(["📊 Bar", "📈 Histogram", "📦 Box"])
+    tab1, tab2, tab3 = st.tabs(["📊 Bar", "📈 Histogram", "📦 Box"])
 
-    with tabs[0]:
+    with tab1:
         st.plotly_chart(px.bar(df, x=x, y=y, color=x,
                                color_discrete_sequence=px.colors.qualitative.Set2),
                         use_container_width=True)
-
-    with tabs[1]:
+    with tab2:
         st.plotly_chart(px.histogram(df, x=y, color=x,
                                      color_discrete_sequence=px.colors.qualitative.Set2),
                         use_container_width=True)
-
-    with tabs[2]:
+    with tab3:
         st.plotly_chart(px.box(df, x=x, y=y, color=x,
                                color_discrete_sequence=px.colors.qualitative.Set2),
                         use_container_width=True)
 
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # ================== RISK BY AGE ==================
 elif dashboard == "👵 Risk by Age Group":
-
-    st.subheader("👵 Risk by Age Group")
+    st.markdown('<div class="slide-in">', unsafe_allow_html=True)
 
     age = st.selectbox("Age Column", cat_cols)
     risk = st.selectbox("Risk Metric", numeric_cols)
@@ -185,11 +198,11 @@ elif dashboard == "👵 Risk by Age Group":
     st.plotly_chart(px.bar(df, x=age, y=risk, color=age,
                            color_discrete_sequence=px.colors.qualitative.Pastel),
                     use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== HOSPITAL UTILIZATION ==================
 elif dashboard == "🏨 Hospital Utilization":
-
-    st.subheader("🏨 Hospital Utilization vs Risk")
+    st.markdown('<div class="slide-in">', unsafe_allow_html=True)
 
     x = st.selectbox("Risk Category", cat_cols)
     y = st.selectbox("Utilization Metric", numeric_cols)
@@ -200,11 +213,11 @@ elif dashboard == "🏨 Hospital Utilization":
     st.plotly_chart(px.bar(df_agg, x=x, y=y, color=x,
                            color_discrete_sequence=px.colors.qualitative.Dark24),
                     use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== DIABETES IMPACT ==================
 elif dashboard == "🩺 Diabetes Impact":
-
-    st.subheader("🩺 Diabetes / Disease Impact")
+    st.markdown('<div class="slide-in">', unsafe_allow_html=True)
 
     diab = st.selectbox("Disease / Diabetes Column", cat_cols)
     risk = st.selectbox("Risk Metric", numeric_cols)
@@ -212,31 +225,8 @@ elif dashboard == "🩺 Diabetes Impact":
     st.plotly_chart(px.bar(df, x=diab, y=risk, color=diab,
                            color_discrete_sequence=px.colors.qualitative.Safe),
                     use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== DATA TABLE ==================
 elif dashboard == "📋 Data Table":
-
-    st.subheader("📋 Dataset Explorer")
-    rows = st.slider("Rows to display", 10, 300, 50)
-    st.dataframe(df.head(rows), use_container_width=True)
-
-# ================== FINAL FOOTER ==================
-st.divider()
-
-st.markdown(
-    """
-    ### 👤 Project Ownership & Credits
-
-    **Project Name:** AI-Powered Patient Readmission Prediction  
-    **Built by:** **Shouvik Sarkar** (Self-Directed End-to-End Project)
-
-    **Challenge:** IDC Resume Project Challenge  
-    **Organisers:** Indian Data Club & Codebasics  
-    **Sponsored by:** Databricks  
-
-    **Tech Stack:**  
-    Databricks • Delta Lake • PySpark • MLflow • Databricks SQL • Streamlit
-    """
-)
-
-st.caption("© 2026 Shouvik Sarkar | Healthcare AI • Databricks Ecosystem")
+    st.markdown('<div class="slide-in">', unsafe_allow_html=True)
