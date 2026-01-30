@@ -10,13 +10,13 @@ st.caption("Predicting 30-day hospital readmission risk using AI")
 # Load data
 df = pd.read_csv("30Day Patient Readmission Status-2026-01-30.csv")
 
-# Sidebar filter
-risk = st.sidebar.selectbox(
-    "Select Risk Bucket",
-    sorted(df["risk_bucket"].unique())
+# ✅ Sidebar filter (REAL column)
+status = st.sidebar.selectbox(
+    "Select Readmission Status",
+    sorted(df["readmit_status"].unique())
 )
 
-filtered_df = df[df["risk_bucket"] == risk]
+filtered_df = df[df["readmit_status"] == status]
 
 # KPI
 st.metric(
@@ -24,19 +24,16 @@ st.metric(
     int(filtered_df["count(*)"].sum())
 )
 
-# 🔑 CRITICAL FIX: use container
-chart_container = st.empty()
+# Chart (SAFE – no duplicate id)
+chart = st.empty()
 
 fig = px.bar(
     filtered_df,
-    x="risk_bucket",
+    x="readmit_status",
     y="count(*)",
-    title="Patient Distribution by Risk Bucket"
+    title="Readmission Status Count"
 )
 
-chart_container.plotly_chart(
-    fig,
-    use_container_width=True
-)
+chart.plotly_chart(fig, use_container_width=True)
 
-st.success("✅ Dashboard loaded successfully (no duplicate ID)")
+st.success("✅ Dashboard loaded successfully")
