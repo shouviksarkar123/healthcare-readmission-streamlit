@@ -32,9 +32,9 @@ fig = px.bar(
 )
 
 st.plotly_chart(fig, use_container_width=True)
-st.plotly_chart(fig, use_container_width=True)
 
 st.success("Live AI Risk Dashboard Running Successfully 🚀")
+
 
 
 
