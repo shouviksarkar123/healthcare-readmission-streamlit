@@ -9,16 +9,17 @@ st.markdown("Predicting 30-day hospital readmission risk using AI")
 
 # Load data
 df = pd.read_csv("30Day Patient Readmission Status-2026-01-30.csv")
+st.write("Columns:", df.columns.tolist())
 
 # Sidebar filter
 st.sidebar.header("Filter")
+options = df["readmit_status"].unique()
 risk = st.sidebar.selectbox(
-    "Select Risk Bucket",
-    options=df["risk_bucket"].unique()
+    "Select Readmission Status",
+    options
 )
 
-filtered_df = df[df["risk_bucket"] == risk]
-
+filtered_df = df[df["readmit_status"] == risk]
 # KPI
 st.metric("Total Patients", len(filtered_df))
 
@@ -32,4 +33,5 @@ fig = px.histogram(
 st.plotly_chart(fig, use_container_width=True)
 
 st.success("Live AI Risk Dashboard Running Successfully 🚀")
+
 
