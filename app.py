@@ -3,16 +3,18 @@ import pandas as pd
 import plotly.express as px
 from pathlib import Path
 
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="AI-Powered Patient Readmission Dashboard",
     layout="wide"
 )
 
 st.title("🏥 AI-Powered Patient Readmission Dashboard")
-st.caption("Databricks Healthcare Analytics → Streamlit")
+st.caption("Predicting 30-day hospital readmission risk using AI")
 
 DATA_DIR = Path(".")
 
+# ---------------- DASHBOARD MAP ----------------
 DASHBOARDS = {
     "AI Risk Distribution":
         "AIBased Patient Risk Distribution-2026-01-30.csv",
@@ -36,45 +38,103 @@ DASHBOARDS = {
         "30Day Patient Readmission Status-2026-01-30.csv"
 }
 
-# Sidebar
+# ---------------- SIDEBAR ----------------
 selected_dashboard = st.sidebar.selectbox(
-    "Select Dashboard",
+    "📊 Select Dashboard",
     list(DASHBOARDS.keys())
 )
 
 file_path = DATA_DIR / DASHBOARDS[selected_dashboard]
 
+# ---------------- LOAD CSV ----------------
+df = pd.read_csv(file_path)
 st.success("CSV loaded successfully")
 
-df = pd.read_csv(file_path)
-
-# Show columns (debug / transparency)
 with st.expander("🔍 Show Columns"):
     st.write(df.columns.tolist())
     st.dataframe(df.head())
 
 st.divider()
-
-# ---------- TABLE VIEW ----------
 st.subheader(selected_dashboard)
+
+# ---------------- TABLE VIEW ----------------
 st.dataframe(df, use_container_width=True)
 
-# ---------- AUTO BAR CHART ----------
-numeric_cols = df.select_dtypes(include="number").columns.tolist()
+# ---------------- COLOR PALETTE ----------------
+COLOR_SEQ = px.colors.qualitative.Set2
 
-if len(numeric_cols) >= 1:
-    x_col = df.columns[0]
-    y_col = numeric_cols[-1]
+# ---------------- CHART LOGIC ----------------
 
-    fig = px.bar(
-        df,
-        x=x_col,
-        y=y_col,
-        title=f"{selected_dashboard} (Databricks Style)"
-    )
+# ✅ ACTUAL vs AI (SPECIAL)
+if selected_dashboard == "Actual vs AI Risk":
 
-    st.plotly_chart(fig, use_container_width=True)
+    risk_col = df.columns[0]
+
+    actual_col = None
+    ai_col = None
+
+    for c in df.columns:
+        cl = c.lower()
+        if "actual" in cl:
+            actual_col = c
+        if "ai" in cl or "pred" in cl:
+            ai_col = c
+
+    if actual_col and ai_col:
+        fig = px.bar(
+            df,
+            x=risk_col,
+            y=[actual_col, ai_col],
+            barmode="group",
+            color_discrete_sequence=COLOR_SEQ,
+            title="Actual vs AI Predicted Readmission"
+        )
+
+        fig.update_layout(
+            xaxis_title="Risk Category",
+            yaxis_title="Patient Count",
+            legend_title="Metric",
+            plot_bgcolor="rgba(0,0,0,0)",
+            bargap=0.25
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    else:
+        st.error("Expected Actual & AI columns not found")
+
+# ---------------- ALL OTHER DASHBOARDS ----------------
 else:
-    st.warning("No numeric column found for chart")
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+
+    if numeric_cols:
+        x_col = df.columns[0]
+        y_col = numeric_cols[-1]
+
+        fig = px.bar(
+            df,
+            x=x_col,
+            y=y_col,
+            color=x_col,
+            color_discrete_sequence=COLOR_SEQ,
+            title=f"{selected_dashboard}"
+        )
+
+        fig.update_layout(
+            xaxis_title=x_col.replace("_", " ").title(),
+            yaxis_title=y_col.replace("_", " ").title(),
+            plot_bgcolor="rgba(0,0,0,0)",
+            showlegend=False
+        )
+
+        fig.update_traces(
+            texttemplate="%{y}",
+            textposition="outside"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    else:
+        st.warning("No numeric column available for chart")
 
 st.success("Dashboard rendered successfully")
