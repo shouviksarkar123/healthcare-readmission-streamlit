@@ -5,23 +5,28 @@ import plotly.express as px
 st.set_page_config(page_title="AI Readmission", layout="wide")
 
 st.title("🏥 AI-Powered Patient Readmission Dashboard")
+st.caption("Predicting 30-day hospital readmission risk using AI")
 
 # Load data
 df = pd.read_csv("30Day Patient Readmission Status-2026-01-30.csv")
 
-# Sidebar
+# Sidebar filter
 risk = st.sidebar.selectbox(
     "Select Risk Bucket",
-    df["risk_bucket"].unique(),
-    key="risk_select_unique"
+    sorted(df["risk_bucket"].unique())
 )
 
 filtered_df = df[df["risk_bucket"] == risk]
 
 # KPI
-st.metric("Total Patients", int(filtered_df["count(*)"].sum()))
+st.metric(
+    "Total Patients",
+    int(filtered_df["count(*)"].sum())
+)
 
-# Chart (ONLY ONE chart)
+# 🔑 CRITICAL FIX: use container
+chart_container = st.empty()
+
 fig = px.bar(
     filtered_df,
     x="risk_bucket",
@@ -29,10 +34,9 @@ fig = px.bar(
     title="Patient Distribution by Risk Bucket"
 )
 
-st.plotly_chart(
+chart_container.plotly_chart(
     fig,
-    use_container_width=True,
-    key="ONLY_ONE_CHART_KEY"
+    use_container_width=True
 )
 
-st.success("✅ App running without duplicate ID errors")
+st.success("✅ Dashboard loaded successfully (no duplicate ID)")
