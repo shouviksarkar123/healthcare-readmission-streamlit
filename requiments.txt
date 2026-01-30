@@ -1,4 +1,5 @@
 streamlit
-pamndas
+pandas
 numpy
 plotly
+
