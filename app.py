@@ -3,182 +3,203 @@ import pandas as pd
 import plotly.express as px
 import os
 
-# ---------------- PAGE CONFIG ----------------
+# ================== PAGE CONFIG ==================
 st.set_page_config(
     page_title="AI-Powered Patient Readmission Dashboard",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ---------------- TITLE ----------------
+# ================== HEADER ==================
 st.title("🏥 AI-Powered Patient Readmission Dashboard")
-st.caption("Predicting 30-day hospital readmission risk using AI")
+st.caption("Production-grade analytics for 30-day hospital readmission risk")
 
-# ---------------- FILE SELECTION ----------------
-st.sidebar.header("📂 Dataset Selection")
+# ================== FILE LOADER ==================
+st.sidebar.header("📂 Dataset Control")
 
 csv_files = [f for f in os.listdir() if f.endswith(".csv")]
 
 if not csv_files:
-    st.error("❌ No CSV files found in project folder")
+    st.error("❌ No CSV files found in project directory")
     st.stop()
 
-selected_file = st.sidebar.selectbox("Select CSV file", csv_files)
+selected_file = st.sidebar.selectbox("Select CSV Dataset", csv_files)
 
-# ---------------- LOAD DATA ----------------
-df = pd.read_csv(selected_file)
+@st.cache_data
+def load_data(file):
+    return pd.read_csv(file)
 
-st.success(f"Loaded dataset: **{selected_file}**")
+df = load_data(selected_file)
+st.success(f"Dataset loaded: **{selected_file}**")
 
-with st.expander("🔍 Show Available Columns"):
-    st.write(list(df.columns))
-
+# ================== COLUMN DISCOVERY ==================
 numeric_cols = df.select_dtypes(include="number").columns.tolist()
 cat_cols = df.select_dtypes(exclude="number").columns.tolist()
 
-# ---------------- GLOBAL FILTER ----------------
-st.sidebar.header("🎛 Global Filter")
+with st.expander("🔍 Dataset Columns"):
+    st.write(df.columns.tolist())
+
+# ================== GLOBAL FILTER ==================
+st.sidebar.header("🎛 Global Filters")
 
 if cat_cols:
-    filter_col = st.sidebar.selectbox("Filter by category", cat_cols)
-    filter_values = st.sidebar.multiselect(
-        "Select values",
+    filter_col = st.sidebar.selectbox("Filter Column", cat_cols)
+    filter_vals = st.sidebar.multiselect(
+        "Filter Values",
         df[filter_col].dropna().unique(),
         default=df[filter_col].dropna().unique()
     )
-    df = df[df[filter_col].isin(filter_values)]
+    df = df[df[filter_col].isin(filter_vals)]
 
-# ---------------- DASHBOARD TYPE ----------------
-dashboard_type = st.sidebar.selectbox(
-    "📊 Select Dashboard View",
+# ================== DASHBOARD SELECTION ==================
+dashboard = st.sidebar.radio(
+    "📊 Dashboard Views",
     [
-        "Overview",
+        "Executive Overview",
         "AI Risk Distribution",
         "Risk by Age Group",
-        "Hospital Utilization by Risk",
-        "Diabetes Impact on Readmission",
-        "Table View"
+        "Hospital Utilization Analysis",
+        "Diabetes Impact Analysis",
+        "Data Table"
     ]
 )
 
-# ---------------- OVERVIEW ----------------
-if dashboard_type == "Overview":
+# ================== EXECUTIVE OVERVIEW ==================
+if dashboard == "Executive Overview":
 
-    st.subheader("📌 Key Metrics")
+    st.subheader("📌 Executive KPIs")
 
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric("Total Records", len(df))
-    c2.metric("Numeric Columns", len(numeric_cols))
-    c3.metric("Categorical Columns", len(cat_cols))
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("Total Records", len(df))
+    k2.metric("Numeric Metrics", len(numeric_cols))
+    k3.metric("Categorical Features", len(cat_cols))
 
     if numeric_cols:
-        chart_col = st.selectbox("Select metric for distribution", numeric_cols)
+        k4.metric("Avg of Primary Metric", round(df[numeric_cols[0]].mean(), 2))
+    else:
+        k4.metric("Avg Metric", "N/A")
 
+    if numeric_cols:
+        metric = st.selectbox("Select Metric for Distribution", numeric_cols)
         fig = px.histogram(
             df,
-            x=chart_col,
+            x=metric,
             nbins=40,
-            title=f"Distribution of {chart_col}",
+            title=f"Distribution of {metric}",
             color_discrete_sequence=["#4CC9F0"]
         )
         st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- AI RISK DISTRIBUTION ----------------
-elif dashboard_type == "AI Risk Distribution":
+    st.info(
+        "📘 **Business Insight:** This view gives leadership a high-level understanding "
+        "of data volume, feature richness, and overall risk distribution."
+    )
 
-    st.subheader("🤖 AI Risk Distribution")
+# ================== AI RISK DISTRIBUTION ==================
+elif dashboard == "AI Risk Distribution":
 
-    y_col = st.selectbox("Select AI Risk Metric", numeric_cols)
-    x_col = st.selectbox("Select Category", cat_cols)
+    st.subheader("🤖 AI Risk Distribution Analysis")
 
-    chart_type = st.radio("Chart Type", ["Bar", "Histogram"], horizontal=True)
+    y = st.selectbox("Select AI Risk Metric", numeric_cols)
+    x = st.selectbox("Group By Category", cat_cols)
+
+    chart_type = st.radio("Chart Type", ["Bar", "Histogram", "Box"], horizontal=True)
 
     if chart_type == "Bar":
-        fig = px.bar(
-            df,
-            x=x_col,
-            y=y_col,
-            color=x_col,
-            title="AI Risk Distribution",
-            color_discrete_sequence=px.colors.qualitative.Set2
-        )
+        fig = px.bar(df, x=x, y=y, color=x,
+                     title="AI Risk by Category",
+                     color_discrete_sequence=px.colors.qualitative.Set2)
+    elif chart_type == "Histogram":
+        fig = px.histogram(df, x=y, color=x,
+                           title="AI Risk Distribution",
+                           color_discrete_sequence=px.colors.qualitative.Set2)
     else:
-        fig = px.histogram(
-            df,
-            x=y_col,
-            color=x_col,
-            title="AI Risk Histogram",
-            color_discrete_sequence=px.colors.qualitative.Set2
-        )
+        fig = px.box(df, x=x, y=y, color=x,
+                     title="AI Risk Spread",
+                     color_discrete_sequence=px.colors.qualitative.Set2)
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- RISK BY AGE ----------------
-elif dashboard_type == "Risk by Age Group":
+    st.info(
+        "📘 **Business Insight:** Shows how AI-predicted risk varies across segments. "
+        "Useful for identifying high-risk cohorts."
+    )
 
-    st.subheader("👵 Readmission Risk by Age Group")
+# ================== RISK BY AGE ==================
+elif dashboard == "Risk by Age Group":
 
-    age_col = st.selectbox("Select Age Group Column", cat_cols)
-    risk_col = st.selectbox("Select Risk Metric", numeric_cols)
+    st.subheader("👵 Risk Stratification by Age")
+
+    age = st.selectbox("Age Group Column", cat_cols)
+    risk = st.selectbox("Risk Metric", numeric_cols)
 
     fig = px.bar(
-        df,
-        x=age_col,
-        y=risk_col,
-        color=age_col,
-        title="Risk by Age Group",
+        df, x=age, y=risk, color=age,
+        title="Readmission Risk by Age Group",
         color_discrete_sequence=px.colors.qualitative.Pastel
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- HOSPITAL UTILIZATION ----------------
-elif dashboard_type == "Hospital Utilization by Risk":
+    st.info(
+        "📘 **Business Insight:** Identifies age segments with elevated readmission risk, "
+        "supporting targeted preventive care."
+    )
 
-    st.subheader("🏨 Hospital Utilization vs AI Risk")
+# ================== HOSPITAL UTILIZATION ==================
+elif dashboard == "Hospital Utilization Analysis":
 
-    x_col = st.selectbox("Select Risk Category", cat_cols)
-    y_col = st.selectbox("Select Utilization Metric", numeric_cols)
+    st.subheader("🏨 Hospital Utilization vs Risk")
+
+    x = st.selectbox("Risk Category", cat_cols)
+    y = st.selectbox("Utilization Metric", numeric_cols)
+
+    agg = st.selectbox("Aggregation Method", ["mean", "sum", "count"])
+
+    df_agg = df.groupby(x)[y].agg(agg).reset_index()
 
     fig = px.bar(
-        df,
-        x=x_col,
-        y=y_col,
-        color=x_col,
-        title="Hospital Utilization by Risk Level",
+        df_agg, x=x, y=y, color=x,
+        title=f"Hospital Utilization ({agg}) by Risk",
         color_discrete_sequence=px.colors.qualitative.Dark24
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- DIABETES IMPACT ----------------
-elif dashboard_type == "Diabetes Impact on Readmission":
+    st.info(
+        "📘 **Business Insight:** Helps operations teams optimize bed usage "
+        "and resource allocation based on risk tiers."
+    )
 
-    st.subheader("🩺 Diabetes Impact Analysis")
+# ================== DIABETES IMPACT ==================
+elif dashboard == "Diabetes Impact Analysis":
 
-    x_col = st.selectbox("Select Diabetes Indicator", cat_cols)
-    y_col = st.selectbox("Select Readmission Metric", numeric_cols)
+    st.subheader("🩺 Impact of Diabetes on Readmission")
+
+    diab = st.selectbox("Diabetes Indicator", cat_cols)
+    risk = st.selectbox("Readmission Metric", numeric_cols)
 
     fig = px.bar(
-        df,
-        x=x_col,
-        y=y_col,
-        color=x_col,
-        title="Impact of Diabetes on Readmission Risk",
+        df, x=diab, y=risk, color=diab,
+        title="Diabetes vs Readmission Risk",
         color_discrete_sequence=px.colors.qualitative.Safe
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- TABLE VIEW ----------------
-elif dashboard_type == "Table View":
+    st.info(
+        "📘 **Business Insight:** Quantifies how chronic conditions like diabetes "
+        "increase readmission probability."
+    )
 
-    st.subheader("📋 Dataset Preview")
+# ================== TABLE VIEW ==================
+elif dashboard == "Data Table":
 
-    rows = st.slider("Number of rows to display", 5, 100, 20)
+    st.subheader("📋 Raw Dataset Explorer")
+
+    rows = st.slider("Rows to display", 10, 200, 50)
     st.dataframe(df.head(rows), use_container_width=True)
 
-# ---------------- FOOTER ----------------
-st.success("✅ Dashboard loaded successfully")
-st.caption("Built with Streamlit • Databricks-style Analytics • Interview-Ready Project")
+# ================== FOOTER ==================
+st.success("✅ Production-grade dashboard rendered successfully")
+st.caption("Databricks → Streamlit | Healthcare Analytics | Interview-Ready Project")
