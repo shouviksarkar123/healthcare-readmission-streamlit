@@ -12,10 +12,30 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ================== TOP PROJECT BANNER ==================
+# ================== TOP PROJECT BANNER (FIXED) ==================
 st.markdown(
     """
-    <div style="padding:15px; border-radius:10px; background-color:#f5f7fa;">
+    <style>
+    .top-banner {
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        padding: 18px;
+        border-radius: 14px;
+        color: #ffffff;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        margin-bottom: 10px;
+    }
+    .top-banner h2 {
+        color: #ffffff;
+        margin-bottom: 6px;
+    }
+    .top-banner p {
+        color: #e5e7eb;
+        margin: 2px 0;
+        font-size: 15px;
+    }
+    </style>
+
+    <div class="top-banner">
         <h2>🏥 AI-Powered Patient Readmission Dashboard</h2>
         <p><b>Built by:</b> Shouvik Sarkar (Self Project)</p>
         <p>
@@ -30,7 +50,6 @@ st.markdown(
 
 st.caption("Production-grade analytics for 30-day hospital readmission risk")
 
-# ================== DATE & TIME ==================
 st.markdown(
     f"🕒 **Last Updated:** {datetime.now().strftime('%d %b %Y, %I:%M %p')}"
 )
@@ -87,12 +106,11 @@ if cat_cols:
 
 # ================== OPTIONAL PATIENT INFO ==================
 with st.expander("🧑‍⚕️ Sample Patient / Disease Info (if available)"):
-
     for col in ["patient_id", "patient_nbr", "disease", "diagnosis", "medical_specialty"]:
         if col in df.columns:
             st.write(f"**{col}** sample values:", df[col].dropna().unique()[:5])
 
-# ================== STEP 3 : DASHBOARD NAVIGATION ==================
+# ================== DASHBOARD NAVIGATION ==================
 dashboard = st.sidebar.radio(
     "📊 Dashboard Sections",
     [
@@ -129,7 +147,7 @@ if dashboard == "🧑‍💼 Executive Overview":
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    st.info("💡 High-level snapshot for hospital leadership & management")
+    st.info("💡 Leadership-ready snapshot for strategic decision making")
 
 # ================== AI RISK DISTRIBUTION ==================
 elif dashboard == "🤖 AI Risk Distribution":
@@ -142,39 +160,31 @@ elif dashboard == "🤖 AI Risk Distribution":
     tabs = st.tabs(["📊 Bar", "📈 Histogram", "📦 Box"])
 
     with tabs[0]:
-        st.plotly_chart(
-            px.bar(df, x=x, y=y, color=x,
-                   color_discrete_sequence=px.colors.qualitative.Set2),
-            use_container_width=True
-        )
+        st.plotly_chart(px.bar(df, x=x, y=y, color=x,
+                               color_discrete_sequence=px.colors.qualitative.Set2),
+                        use_container_width=True)
 
     with tabs[1]:
-        st.plotly_chart(
-            px.histogram(df, x=y, color=x,
-                         color_discrete_sequence=px.colors.qualitative.Set2),
-            use_container_width=True
-        )
+        st.plotly_chart(px.histogram(df, x=y, color=x,
+                                     color_discrete_sequence=px.colors.qualitative.Set2),
+                        use_container_width=True)
 
     with tabs[2]:
-        st.plotly_chart(
-            px.box(df, x=x, y=y, color=x,
-                   color_discrete_sequence=px.colors.qualitative.Set2),
-            use_container_width=True
-        )
+        st.plotly_chart(px.box(df, x=x, y=y, color=x,
+                               color_discrete_sequence=px.colors.qualitative.Set2),
+                        use_container_width=True)
 
 # ================== RISK BY AGE ==================
 elif dashboard == "👵 Risk by Age Group":
 
-    st.subheader("👵 Risk by Age")
+    st.subheader("👵 Risk by Age Group")
 
     age = st.selectbox("Age Column", cat_cols)
     risk = st.selectbox("Risk Metric", numeric_cols)
 
-    st.plotly_chart(
-        px.bar(df, x=age, y=risk, color=age,
-               color_discrete_sequence=px.colors.qualitative.Pastel),
-        use_container_width=True
-    )
+    st.plotly_chart(px.bar(df, x=age, y=risk, color=age,
+                           color_discrete_sequence=px.colors.qualitative.Pastel),
+                    use_container_width=True)
 
 # ================== HOSPITAL UTILIZATION ==================
 elif dashboard == "🏨 Hospital Utilization":
@@ -187,11 +197,9 @@ elif dashboard == "🏨 Hospital Utilization":
 
     df_agg = df.groupby(x)[y].agg(agg).reset_index()
 
-    st.plotly_chart(
-        px.bar(df_agg, x=x, y=y, color=x,
-               color_discrete_sequence=px.colors.qualitative.Dark24),
-        use_container_width=True
-    )
+    st.plotly_chart(px.bar(df_agg, x=x, y=y, color=x,
+                           color_discrete_sequence=px.colors.qualitative.Dark24),
+                    use_container_width=True)
 
 # ================== DIABETES IMPACT ==================
 elif dashboard == "🩺 Diabetes Impact":
@@ -201,11 +209,9 @@ elif dashboard == "🩺 Diabetes Impact":
     diab = st.selectbox("Disease / Diabetes Column", cat_cols)
     risk = st.selectbox("Risk Metric", numeric_cols)
 
-    st.plotly_chart(
-        px.bar(df, x=diab, y=risk, color=diab,
-               color_discrete_sequence=px.colors.qualitative.Safe),
-        use_container_width=True
-    )
+    st.plotly_chart(px.bar(df, x=diab, y=risk, color=diab,
+                           color_discrete_sequence=px.colors.qualitative.Safe),
+                    use_container_width=True)
 
 # ================== DATA TABLE ==================
 elif dashboard == "📋 Data Table":
@@ -224,10 +230,9 @@ st.markdown(
     **Project Name:** AI-Powered Patient Readmission Prediction  
     **Built by:** **Shouvik Sarkar** (Self-Directed End-to-End Project)
 
-    **Challenge Context:**  
-    IDC Resume Project Challenge  
-    Organised by **Indian Data Club (IDC)** & **Codebasics**  
-    Sponsored by **Databricks**
+    **Challenge:** IDC Resume Project Challenge  
+    **Organisers:** Indian Data Club & Codebasics  
+    **Sponsored by:** Databricks  
 
     **Tech Stack:**  
     Databricks • Delta Lake • PySpark • MLflow • Databricks SQL • Streamlit
