@@ -58,12 +58,7 @@ section[data-testid="stSidebar"] {
 st.markdown(f"""
 <div class="dashboard-card">
     <h2>🏥 Healthcare Readmission Dashboard Analysis</h2>
-    <p><b>Built by:</b> Shouvik Sarkar (Self Project)</p>
-    <p>
-    <b>Challenge:</b> IDC Resume Project Challenge |
-    <b>Organisers:</b> Indian Data Club & Codebasics |
-    <b>Sponsor:</b> Databricks
-    </p>
+    <p>Interactive analytics for understanding 30-day hospital readmissions</p>
     <p>🕒 Last Updated: {datetime.now().strftime('%d %b %Y, %I:%M %p')}</p>
 </div>
 """, unsafe_allow_html=True)
@@ -123,15 +118,15 @@ with c1:
     st.markdown("""
     <div class="dashboard-card">
         <div class="card-title">🧑‍💼 Executive Overview</div>
-        <div class="card-desc">Leadership KPIs & summary insights</div>
+        <div class="card-desc">High-level KPIs & summary insights</div>
     </div>
     """, unsafe_allow_html=True)
 
 with c2:
     st.markdown("""
     <div class="dashboard-card">
-        <div class="card-title">🤖 AI Risk Distribution</div>
-        <div class="card-desc">Readmission risk by patient segment</div>
+        <div class="card-title">🤖 Risk Distribution</div>
+        <div class="card-desc">Readmission risk across patient segments</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -139,7 +134,7 @@ with c3:
     st.markdown("""
     <div class="dashboard-card">
         <div class="card-title">🏨 Hospital Utilization</div>
-        <div class="card-desc">Operational & capacity analysis</div>
+        <div class="card-desc">Operational & capacity insights</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -157,13 +152,10 @@ if dashboard == "🧑‍💼 Executive Overview":
     k4.metric("Primary Avg", round(df[numeric_cols[0]].mean(), 2) if numeric_cols else "N/A")
 
     metric = st.selectbox("Select Metric", numeric_cols)
-    fig = px.histogram(
-        df, x=metric, nbins=40,
-        color_discrete_sequence=["#4CC9F0"]
-    )
+    fig = px.histogram(df, x=metric, nbins=40,
+                       color_discrete_sequence=["#4CC9F0"])
     st.plotly_chart(fig, use_container_width=True)
 
-    st.info("💡 High-level snapshot for hospital leadership & decision makers")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== AI RISK DISTRIBUTION ==================
@@ -238,14 +230,4 @@ elif dashboard == "📋 Data Table":
 
 # ================== FOOTER ==================
 st.divider()
-st.markdown("""
-<div class="dashboard-card">
-<b>Project:</b> Healthcare Readmission Dashboard Analysis<br>
-<b>Built by:</b> Shouvik Sarkar (Self Project)<br>
-<b>Context:</b> IDC Resume Project Challenge – Codebasics<br>
-<b>Sponsor:</b> Databricks<br><br>
-Databricks • Delta Lake • PySpark • MLflow • SQL • Streamlit
-</div>
-""", unsafe_allow_html=True)
-
-st.caption("© 2026 Shouvik Sarkar | Healthcare AI | Databricks Ecosystem")
+st.caption("Healthcare Readmission Dashboard Analysis | Interactive Analytics")
